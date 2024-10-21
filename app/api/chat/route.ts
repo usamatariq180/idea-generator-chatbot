@@ -24,20 +24,45 @@ Guidelines for idea generation:
 - Encourage users to build upon or combine different ideas for even more innovative results.
 - If relevant, consider environmental, social, and ethical implications of ideas.
 - Offer ideas across various scales - from small, immediate actions to large, long-term projects.
-- Only suggest atleast 3 - 5 ideas per interaction to maintain focus and avoid overwhelming the user. Each idea should not exceed 3-4 sentences.
+- Only suggest at least 3 - 5 ideas per interaction to maintain focus and avoid overwhelming the user. Each idea should not exceed 3-4 sentences.
 
 Remember, your role is to inspire and catalyze creative thinking. Engage the user in a collaborative ideation process, and always be enthusiastic about exploring new possibilities.
 
 If user input is not being able to generate idea then ask user: ["Please write something specific to get some great ideas!"]
 
-The Output Format: It should be a JSON array of strings, each representing a unique idea. even the idea is not generated then only return one stroing in json. 
+The Output Format: It should be a JSON array of strings, each representing a unique idea. Even if the idea is not generated, return only one string in JSON.
 
-Please make sure by hook or crook response should be in json like this: 
+Please make sure by hook or crook response should be in JSON like this: 
 [
     "idea1",
     "idea2",
-    "idea3",
+    "idea3"
 ]`;
+
+function formatResponse(response: string): string[] {
+  try {
+    const parsed = JSON.parse(response);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+  }
+
+  // If it's not valid JSON, split by newlines and clean up
+  const ideas = response.split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => line.replace(/^\d+\.\s*/, '')) // Remove leading numbers
+    .map(line => line.replace(/^["']|["']$/g, '')); // Remove surrounding quotes
+
+  // If we still don't have any ideas, wrap the entire response as a single idea
+  if (ideas.length === 0) {
+    return [response.trim()];
+  }
+
+  return ideas;
+}
 
 async function generateChatResponse(messages: Message[]): Promise<string> {
   try {
@@ -48,11 +73,15 @@ async function generateChatResponse(messages: Message[]): Promise<string> {
         ...messages
       ],
     });
-    return response.choices[0].message?.content || 'No response generated';
-    console.log('Generated response:', response.choices[0].message?.content);
+
+    const content = response.choices[0].message?.content || 'No response generated';
+    console.log('Generated response:', content);
+
+    const formattedIdeas = formatResponse(content);
+    return JSON.stringify(formattedIdeas);
   } catch (error) {
     console.error('Error calling OpenAI:', error);
-    return 'Sorry, I encountered an error. Please try again.';
+    return JSON.stringify(['Sorry, I encountered an error. Please try again.']);
   }
 }
 
@@ -67,7 +96,7 @@ export async function POST(request: Request) {
 
   try {
     const response = await generateChatResponse(messages);
-    console.log('Generated response:', response);
+    console.log('Formatted response:', response);
     return NextResponse.json({ response });
   } catch (error) {
     console.error('Error in chat handler:', error);

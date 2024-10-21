@@ -1,19 +1,32 @@
+"use client"
 import React, { useState, useEffect, useRef } from "react";
 import { Message, ChatResponse } from "../types";
 import { Heart, Loader, Send} from "lucide-react";
 
 export default function ChatInterfaceWithIdeas() {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const storedMessages = localStorage.getItem("chatHistory");
-    return storedMessages ? JSON.parse(storedMessages) : [];
-  });
-  const [savedIdeas, setSavedIdeas] = useState<string[]>(() => {
-    const storedIdeas = localStorage.getItem("savedIdeas");
-    return storedIdeas ? JSON.parse(storedIdeas) : [];
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [savedIdeas, setSavedIdeas] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const chatWindowRef = useRef<HTMLDivElement>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      const storedMessages = localStorage.getItem("chatHistory");
+      const storedIdeas = localStorage.getItem("savedIdeas");
+      if (storedMessages) {
+        setMessages(JSON.parse(storedMessages));
+      }
+      if (storedIdeas) {
+        setSavedIdeas(JSON.parse(storedIdeas));
+      }
+    }
+  }, [isClient]);
 
   useEffect(() => {
     if (chatWindowRef.current) {
@@ -22,22 +35,26 @@ export default function ChatInterfaceWithIdeas() {
   }, [messages]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("chatHistory", JSON.stringify(messages));
-      console.log("Saved messages to localStorage:", messages);
-    } catch (error) {
-      console.error("Error saving chat history to localStorage:", error);
+    if (isClient) {
+      try {
+        localStorage.setItem("chatHistory", JSON.stringify(messages));
+        console.log("Saved messages to localStorage:", messages);
+      } catch (error) {
+        console.error("Error saving chat history to localStorage:", error);
+      }
     }
-  }, [messages]);
+  }, [messages, isClient]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("savedIdeas", JSON.stringify(savedIdeas));
-      console.log("Saved ideas to localStorage:", savedIdeas);
-    } catch (error) {
-      console.error("Error saving ideas to localStorage:", error);
+    if (isClient) {
+      try {
+        localStorage.setItem("savedIdeas", JSON.stringify(savedIdeas));
+        console.log("Saved ideas to localStorage:", savedIdeas);
+      } catch (error) {
+        console.error("Error saving ideas to localStorage:", error);
+      }
     }
-  }, [savedIdeas]);
+  }, [savedIdeas, isClient]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,10 +112,16 @@ export default function ChatInterfaceWithIdeas() {
   const handleReset = () => {
     setMessages([]);
     setSavedIdeas([]);
-    localStorage.removeItem("savedIdeas");
-    localStorage.removeItem("chatHistory");
-    console.log("Reset: Cleared messages and localStorage");
+    if (isClient) {
+      localStorage.removeItem("savedIdeas");
+      localStorage.removeItem("chatHistory");
+      console.log("Reset: Cleared messages and localStorage");
+    }
   };
+
+  if (!isClient) {
+    return null; // or a loading indicator
+  }
 
   return (
     <div className="flex flex-col h-screen bg-[#111111] text-[#e3e3e3] sm:mx-[8%] mx-[4%] font-mono">

@@ -3,8 +3,14 @@ import { Message, ChatResponse } from "../types";
 import { Heart, Loader, Send} from "lucide-react";
 
 export default function ChatInterfaceWithIdeas() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [savedIdeas, setSavedIdeas] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const storedMessages = localStorage.getItem("chatHistory");
+    return storedMessages ? JSON.parse(storedMessages) : [];
+  });
+  const [savedIdeas, setSavedIdeas] = useState<string[]>(() => {
+    const storedIdeas = localStorage.getItem("savedIdeas");
+    return storedIdeas ? JSON.parse(storedIdeas) : [];
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const chatWindowRef = useRef<HTMLDivElement>(null);
@@ -16,18 +22,29 @@ export default function ChatInterfaceWithIdeas() {
   }, [messages]);
 
   useEffect(() => {
-    const storedIdeas = localStorage.getItem("savedIdeas");
-    if (storedIdeas) {
-      setSavedIdeas(JSON.parse(storedIdeas));
+    try {
+      localStorage.setItem("chatHistory", JSON.stringify(messages));
+      console.log("Saved messages to localStorage:", messages);
+    } catch (error) {
+      console.error("Error saving chat history to localStorage:", error);
     }
-  }, []);
+  }, [messages]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("savedIdeas", JSON.stringify(savedIdeas));
+      console.log("Saved ideas to localStorage:", savedIdeas);
+    } catch (error) {
+      console.error("Error saving ideas to localStorage:", error);
+    }
+  }, [savedIdeas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: input };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setMessages(prevMessages => [...prevMessages, userMessage]);
     setInput("");
     setIsLoading(true);
 
@@ -51,10 +68,10 @@ export default function ChatInterfaceWithIdeas() {
         role: "assistant",
         content: ideas.join("\n\n"),
       };
-      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+      setMessages(prevMessages => [...prevMessages, assistantMessage]);
     } catch (error) {
       console.error("Error:", error);
-      setMessages((prevMessages) => [
+      setMessages(prevMessages => [
         ...prevMessages,
         {
           role: "assistant",
@@ -68,13 +85,9 @@ export default function ChatInterfaceWithIdeas() {
 
   const toggleSaveIdea = (idea: string) => {
     setSavedIdeas((prevIdeas) => {
-      let newIdeas;
-      if (prevIdeas.includes(idea)) {
-        newIdeas = prevIdeas.filter((savedIdea) => savedIdea !== idea);
-      } else {
-        newIdeas = [...prevIdeas, idea];
-      }
-      localStorage.setItem("savedIdeas", JSON.stringify(newIdeas));
+      const newIdeas = prevIdeas.includes(idea)
+        ? prevIdeas.filter((savedIdea) => savedIdea !== idea)
+        : [...prevIdeas, idea];
       return newIdeas;
     });
   };
@@ -83,22 +96,24 @@ export default function ChatInterfaceWithIdeas() {
     setMessages([]);
     setSavedIdeas([]);
     localStorage.removeItem("savedIdeas");
+    localStorage.removeItem("chatHistory");
+    console.log("Reset: Cleared messages and localStorage");
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#111111] text-[#e3e3e3] mx-[8%] font-mono">
+    <div className="flex flex-col h-screen bg-[#111111] text-[#e3e3e3] sm:mx-[8%] mx-[4%] font-mono">
       <div className="flex justify-between items-center py-4 px-6 mt-4 rounded-xl bg-[#1a1a1a]">
-        <h1 className="text-2xl font-semibold">Idea Generator ChatBot</h1>
+        <h1 className="sm:text-2xl text-[16px] font-semibold">Idea Generator ChatBot</h1>
         <button
           onClick={handleReset}
-          className="px-8 py-2 bg-[#d9a56b] font-semibold rounded-lg text-[#111111] hover:bg-[#d89d5a]"
+          className="sm:px-8 px-4 sm:py-2 py-1 bg-[#d9a56b] font-semibold rounded-lg sm:text-lg text-sm  text-[#111111] hover:bg-[#d89d5a]"
         >
           Reset
         </button>
       </div>
 
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden gap-4 mt-4 mb-4">
-        <div className="flex flex-col w-full md:w-2/3 bg-[#1a1a1a] rounded-xl p-6">
+        <div className="flex flex-col w-full md:w-2/3 bg-[#1a1a1a] rounded-xl p-6 sm:h-full h-screen">
           <div
             ref={chatWindowRef}
             className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2"
@@ -111,7 +126,7 @@ export default function ChatInterfaceWithIdeas() {
                 }`}
               >
                 {message.role === "user" ? (
-                  <div className="inline-block p-2 rounded-lg text-sm bg-[#313131] max-w-[90%] text-white">
+                  <div className="inline-block p-2 rounded-lg sm:text-sm text-[12px] bg-[#313131] max-w-[90%] text-white">
                     {message.content}
                   </div>
                 ) : (
@@ -119,7 +134,7 @@ export default function ChatInterfaceWithIdeas() {
                     {message.content.split("\n\n").map((idea, ideaIndex) => (
                       <div
                         key={ideaIndex}
-                        className="flex items-start space-x-2 bg-[#372b1d] rounded-lg max-w-[90%] text-sm p-2"
+                        className="flex items-start space-x-2 bg-[#372b1d] rounded-lg max-w-[90%] sm:text-sm text-[12px] p-2"
                       >
                         <div className="flex-grow text-white">{idea}</div>
                         <button
@@ -152,27 +167,27 @@ export default function ChatInterfaceWithIdeas() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="flex-1 px-4 py-2 bg-[#2f2f2f] text-sm rounded-lg"
+              className="flex-1 px-4 py-2 bg-[#2f2f2f] sm:text-sm text-[12px] rounded-lg"
               placeholder="Type to generate ideas..."
             />
             <button
               type="submit"
-              className="px-6 py-2 bg-[#d9a56b] font-semibold text-[#111111] rounded-lg hover:bg-[#d89d5a] flex items-center justify-center"
+              className="sm:px-6 px-4 sm:py-2 py-1 bg-[#d9a56b] font-semibold text-[#111111] rounded-lg hover:bg-[#d89d5a] flex items-center justify-center"
               disabled={isLoading}
             >
               {isLoading ? (
                 <Loader className="animate-spin" size={24} />
               ) : (
-                <Send size={24} className={`p-[2px] rounded-md  `} />
+                <Send size={24} className={`sm:p-[2px] p-1 rounded-md  `} />
               )}
             </button>
           </form>
         </div>
-        <div className="flex flex-col w-full md:w-1/3 bg-[#1a1a1a] rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-4 text-center">Saved Ideas</h2>
+        <div className="sm:flex flex-col w-full md:w-1/3 bg-[#1a1a1a] rounded-xl p-6 hidden">
+          <h2 className="sm:text-xl text-[18px] font-bold mb-4 text-center">Saved Ideas</h2>
           <div className="flex-1 overflow-y-auto space-y-2 pr-2">
             {savedIdeas.map((idea, index) => (
-              <div key={index} className="p-2 bg-[#372b1d] rounded-lg text-sm">
+              <div key={index} className="p-2 bg-[#372b1d] rounded-lg sm:text-sm text-[12px]">
                 {idea}
               </div>
             ))}

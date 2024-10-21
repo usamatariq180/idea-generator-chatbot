@@ -1,6 +1,7 @@
 # Idea Generator Chatbot
 
 This is a full-stack web application that allows users to brainstorm ideas with a chatbot and save them to a list.
+https://idea-generator-chatbot-willow.vercel.app/
 
 ## Prerequisites
 

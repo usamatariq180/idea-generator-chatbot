@@ -50,5 +50,4 @@ This is a full-stack web application that allows users to brainstorm ideas with 
 
 ## Notes
 
-- This application uses local storage to persist saved ideas. They will be available even after refreshing the page but are limited to the browser you're using.
-- The chat history is not persisted and will be lost on page refresh.
+- This application uses local storage to persist saved ideas and chat history. They will be available even after refreshing the page but are limited to the browser you're using.

@@ -1,7 +1,7 @@
 # Idea Generator Chatbot
 
 This is a full-stack web application that allows users to brainstorm ideas with a chatbot and save them to a list.
-https://idea-generator-chatbot-willow.vercel.app/
+https://idea-generator-chatbot.vercel.app/
 
 ## Prerequisites
 
@@ -12,8 +12,8 @@ https://idea-generator-chatbot-willow.vercel.app/
 
 1. Clone the repository:
    ```
-   git clone https://github.com/usamatariq180/idea-generator-chatbot-willow-full-stack-assignment-202410.git
-   cd idea-generator-chatbot-willow-full-stack-assignment-202410
+   git clone https://github.com/usamatariq180/idea-generator-chatbot.git
+   cd idea-generator-chatbot
    ```
 
 2. Install dependencies:
